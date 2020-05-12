@@ -1,0 +1,21 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+button {
+  width: 160px;
+  border-radius: 12px;
+  padding: 20px 50px;
+  text-transform: uppercase;
+  border: 3px solid;
+  outline: none;
+  font-size: 1em;
+  font-weight: 600;
+}

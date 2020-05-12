@@ -7,16 +7,19 @@ let track;
 let progressBar;
 let soundIcons;
 let selectedSoundIcon;
+let button;
 
 let red;
 let green;
 let blue;
+let gray;
 
 const setupSoundIcons = () => {
   soundIcons = [
     new SoundIcon(30, height - 30, 50, "001", red),
     new SoundIcon(85, height - 30, 50, "002", green),
     new SoundIcon(140, height - 30, 50, "003", blue),
+    new SoundIcon(195, height - 30, 50, "004", red),
   ];
 };
 
@@ -60,8 +63,18 @@ class Beat {
   }
 
   show() {
-    fill(red);
-    stroke(0);
+    if (
+      progressBar.x >= this.x &&
+      progressBar.x <= this.x + this.width &&
+      isPlaying
+    ) {
+      fill(255);
+      stroke(gray);
+    } else {
+      fill(red);
+      stroke(0);
+      strokeWeight(4);
+    }
     rect(this.x, this.y, this.width, this.height);
   }
 
@@ -92,7 +105,6 @@ class Beat {
         const audio = document.querySelector(
           `.audio-container audio[data-id="${sound}"]`
         );
-
         audio.currentTime = 0;
         audio.play();
       });
@@ -176,6 +188,10 @@ function keyPressed() {
   }
 }
 
+function togglePlaying() {
+  isPlaying = !isPlaying;
+}
+
 function setup() {
   createCanvas(window.innerWidth, window.innerHeight);
   fill(255);
@@ -184,14 +200,19 @@ function setup() {
   red = color(255, 0, 0);
   green = color(0, 255, 0);
   blue = color(0, 0, 255);
+  gray = color(128, 128, 128);
 
   track = new Track();
   progressBar = new ProgressBar();
+  button = createButton("play");
+  button.position(width / 2 - 80, 100);
+  button.mousePressed(togglePlaying);
 
   setupSoundIcons();
 }
 
 function draw() {
+  clear();
   soundIcons.forEach((soundIcon) => {
     soundIcon.show();
   });
@@ -199,11 +220,16 @@ function draw() {
   track.show();
 
   if (isPlaying) {
+    button.html("pause");
     track.beats.forEach((beat) => {
       beat.play();
     });
     progressBar.update();
   } else {
     progressBar.reset();
+    button.html("play");
+    track.beats.forEach((beat) => {
+      beat.reset();
+    });
   }
 }

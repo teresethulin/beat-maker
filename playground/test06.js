@@ -2,25 +2,36 @@
 
 let bpm = 120;
 let isPlaying = false;
+let assets = [];
+let metronomeUdateSpeed;
 
-let track;
+let track1;
+let track2;
 let progressBar;
 let soundIcons;
 let selectedSoundIcon;
-let button;
 
 let red;
 let green;
 let blue;
-let gray;
 
 const setupSoundIcons = () => {
   soundIcons = [
-    new SoundIcon(30, height - 30, 50, "001", red),
-    new SoundIcon(85, height - 30, 50, "002", green),
-    new SoundIcon(140, height - 30, 50, "003", blue),
-    new SoundIcon(195, height - 30, 50, "004", red),
+    new SoundIcon(30, height - 30, 50, "sound1", red),
+    new SoundIcon(85, height - 30, 50, "sound2", green),
+    new SoundIcon(140, height - 30, 50, "sound3", blue),
   ];
+};
+
+const setupAssets = () => {
+  const sound1 = loadSound("./../assets/sounds/hihat.wav");
+  const sound2 = loadSound("./../assets/sounds/clap.wav");
+  const sound3 = loadSound("./../assets/sounds/boom.wav");
+  assets = {
+    sound1: { sound: sound1, name: "hihat" },
+    sound2: { sound: sound2, name: "clap" },
+    sound3: { sound: sound3, name: "boom" },
+  };
 };
 
 class SoundIcon {
@@ -42,12 +53,7 @@ class SoundIcon {
     if (dist(this.x, this.y, mouseX, mouseY) <= this.size / 2) {
       selectedSoundIcon = { audioId: this.audioId, color: this.color };
 
-      const audio = document.querySelector(
-        `.audio-container audio[data-id="${this.audioId}"]`
-      );
-
-      audio.currentTime = 0;
-      audio.play();
+      assets[this.audioId].sound.play();
     }
   }
 }
@@ -63,18 +69,8 @@ class Beat {
   }
 
   show() {
-    if (
-      progressBar.x >= this.x &&
-      progressBar.x <= this.x + this.width &&
-      isPlaying
-    ) {
-      fill(255);
-      stroke(gray);
-    } else {
-      fill(red);
-      stroke(0);
-      strokeWeight(4);
-    }
+    fill(red);
+    stroke(0);
     rect(this.x, this.y, this.width, this.height);
   }
 
@@ -86,7 +82,7 @@ class Beat {
       mouseY <= this.y + this.height &&
       selectedSoundIcon
     ) {
-      this.sounds.push(selectedSoundIcon.audioId);
+      this.sounds.push(assets[selectedSoundIcon.audioId]);
     }
   }
 
@@ -101,17 +97,9 @@ class Beat {
       !this.playedThisLoop
     ) {
       this.playedThisLoop = true;
-      const audioElements = [];
 
       this.sounds.forEach((sound) => {
-        audioElements.push(
-          document.querySelector(`.audio-container audio[data-id="${sound}"]`)
-        );
-      });
-
-      audioElements.forEach((audio) => {
-        audio.currentTime = 0;
-        audio.play();
+        sound.sound.play();
       });
     }
   }
@@ -122,12 +110,12 @@ class Beat {
 }
 
 class Track {
-  constructor() {
+  constructor(offsetY, numberOfBeats) {
     this.height = 70;
     this.width = width * 0.6;
     this.offsetX = width * 0.2;
-    this.offsetY = height / 2 - this.height / 2;
-    this.numberOfBeats = 4;
+    this.offsetY = offsetY;
+    this.numberOfBeats = numberOfBeats;
     this.beatWidth = this.width / this.numberOfBeats;
     this.beats = [];
 
@@ -152,8 +140,8 @@ class Track {
 
 class ProgressBar {
   constructor() {
-    this.start = track.offsetX;
-    this.end = track.offsetX + track.width;
+    this.start = track1.offsetX;
+    this.end = track1.offsetX + track1.width;
     this.x = this.start;
   }
 
@@ -163,9 +151,12 @@ class ProgressBar {
 
   update() {
     //update rate should not be hard coded
-    this.x += 24;
+    this.x += 8;
     if (this.x >= this.end) {
-      track.beats.forEach((beat) => {
+      track1.beats.forEach((beat) => {
+        beat.reset();
+      });
+      track2.beats.forEach((beat) => {
         beat.reset();
       });
       this.x = this.start;
@@ -178,7 +169,14 @@ function mousePressed() {
     soundIcon.clicked();
   });
 
-  track.beats.forEach((beat) => {
+  track1.beats.forEach((beat) => {
+    if (keyIsDown(SHIFT)) {
+      beat.play();
+    } else {
+      beat.clicked();
+    }
+  });
+  track2.beats.forEach((beat) => {
     if (keyIsDown(SHIFT)) {
       beat.play();
     } else {
@@ -193,10 +191,6 @@ function keyPressed() {
   }
 }
 
-function togglePlaying() {
-  isPlaying = !isPlaying;
-}
-
 function setup() {
   createCanvas(window.innerWidth, window.innerHeight);
   fill(255);
@@ -205,35 +199,39 @@ function setup() {
   red = color(255, 0, 0);
   green = color(0, 255, 0);
   blue = color(0, 0, 255);
-  gray = color(128, 128, 128);
 
-  track = new Track();
+  track1 = new Track(100, 8);
+  track2 = new Track(200, 12);
   progressBar = new ProgressBar();
-  button = createButton("play");
-  button.position(width / 2 - 80, 100);
-  button.mousePressed(togglePlaying);
+  metronomeUpdateSpeed = track1.width / 90;
 
   setupSoundIcons();
+  setupAssets();
 }
 
 function draw() {
-  clear();
   soundIcons.forEach((soundIcon) => {
     soundIcon.show();
   });
 
-  track.show();
+  track1.show();
+  track2.show();
 
   if (isPlaying) {
-    button.html("pause");
-    track.beats.forEach((beat) => {
+    track1.beats.forEach((beat) => {
+      beat.play();
+    });
+    track2.beats.forEach((beat) => {
       beat.play();
     });
     progressBar.update();
   } else {
     progressBar.reset();
-    button.html("play");
-    track.beats.forEach((beat) => {
+    track1.beats.forEach((beat) => {
+      beat.reset();
+    });
+    progressBar.reset();
+    track2.beats.forEach((beat) => {
       beat.reset();
     });
   }
